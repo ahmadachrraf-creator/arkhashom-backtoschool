@@ -1,0 +1,52 @@
+name: Back to School Bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create data directory
+        run: mkdir -p data
+
+      - name: Run bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_CHAT_ID: "@arkhashomoffers"
+          AFFILIATE_TAG: "arkhashom-21"
+          BANNER_PATH: "arkhashom_banner_backtoschool.png"
+          MAX_POSTS_PER_RUN: ${{ secrets.MAX_POSTS_PER_RUN || '3' }}
+          MIN_DISCOUNT: "15"
+        run: python run_cloud.py
+
+      - name: Commit state files
+        run: |
+          git config user.name "arkhashom-bot"
+          git config user.email "bot@arkhashom.dev"
+          git add data/ || true
+          git diff --cached --quiet && echo "No state changes" && exit 0
+          git commit -m "bot: update state $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
