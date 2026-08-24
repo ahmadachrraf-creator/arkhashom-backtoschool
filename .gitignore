@@ -1,0 +1,8 @@
+data/*.png
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+config.env
+*.exe
